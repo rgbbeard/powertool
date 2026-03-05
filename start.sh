@@ -1,0 +1,4 @@
+#!/bin/bash
+base="$(dirname $(readlink -f $0))"
+
+python "$base/terminal.py"

@@ -1,0 +1,14 @@
+{
+    "prompt_toolkit": {
+        "url": "https://pypi.org/project/prompt-toolkit/",
+        "command": "pip install prompt-toolkit"
+    },
+    "pynput": {
+        "url": "https://pypi.org/project/pynput/",
+        "command": "pip install pynput"
+    },
+    "pycryptodome": {
+        "url": "https://pypi.org/project/pycryptodome/",
+        "command": "pip install pycryptodome"
+    }
+}

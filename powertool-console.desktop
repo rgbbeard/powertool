@@ -1,0 +1,11 @@
+#! /bin/bash
+[Desktop Entry]
+Name=PowerConsole
+Comment=Emulated terminal
+TryExec=/opt/powertool/start.sh
+Exec=/opt/powertool/start.sh
+Icon=/opt/powertool/icon.png
+Terminal=true
+Type=Application
+StartupNotify=true
+Categories=System;
