@@ -117,13 +117,17 @@ def import_module_error(module_name: str):
     response = input("Would you like to install it now? (yes/no) ")
     response = response.strip().lower()
 
-    if response.startsWith("y"):
+    if response.startswith("y"):
         try_install(module_name)
-    elif response.startsWith("n"):
+    elif response.startswith("n"):
         print(f"See {url} for more details\n")
     exit()
 
 
-def exec_exit():
+def exec_exit(force: bool = False):
     print("Okay, bye")
+
+    if force:
+        os._exit(0)
+    
     exit()
