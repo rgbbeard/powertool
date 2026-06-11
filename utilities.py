@@ -11,6 +11,13 @@ BASE = dirname(__file__)
 REQSFILE = f"{BASE}/requirements.json"
 
 
+def is_scrambled(target: str, letters: Union[list, str]) -> bool:
+    if isinstance(letters, str):
+        letters = list(letters)
+
+    return all(l in target for l in letters)
+
+
 def get_path(from_filename: str, path_format: str = "unix"):
     curdir = ""
 
@@ -65,19 +72,39 @@ def array_clear(
 
 
 def printerr(message: str):
-    print(f"\n❌  {message}")
+    print(f"""
+    ⌈       ⌉
+       \\/
+       /\\
+    ⌊       ⌋  {message}
+    """)
 
 
 def printinf(message: str):
-    print(f"\nℹ️  {message}")
+    print(f"""
+    ⌈       ⌉
+        •
+        I
+    ⌊       ⌋ {message}
+    """)
 
 
 def printalr(message: str):
-    print(f"\n⚠️  {message}")
+    print(f"""
+    ⌈   _   ⌉
+       / \\
+      / ! \\  {message}
+    ⌊ ¯¯¯¯¯ ⌋
+    """)
 
 
 def printsuc(message: str):
-    print(f"\n✅  {message}")
+    print(f"""
+    ⌈       ⌉
+         /
+      \\/
+    ⌊       ⌋ {message}
+    """)
 
 
 def get_requirements():

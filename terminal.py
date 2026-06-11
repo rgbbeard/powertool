@@ -18,7 +18,8 @@ from utilities import (
 	printalr,
 	printerr,
 	printsuc,
-	import_module_error
+	import_module_error,
+	is_scrambled
 )
 
 try:
@@ -46,6 +47,12 @@ cuid = os.getuid()
 cugid = os.getgid()
 is_super_user = False if cuid != 0 else True
 e = os.environ.copy()
+
+""" TODO
+
+	The whole autocompletion
+	process doesn't work very well
+"""
 git_commands = {
 	"add": {
 		".": None
@@ -67,9 +74,10 @@ completer = {
 	"clear": None,
 	"exit": None,
 	"delete-history": None,
-	"reload-conf": None,
-	"reload-config": None,
-	"reload-env": None,
+	"reload": {
+		"history": None,	
+		"config": None	
+	},
 	"ln": {
 		"-s": None
 	},
@@ -256,40 +264,47 @@ def prompt(ppt):
 	    except KeyboardInterrupt:
 	    	return ""
 	    except EOFError:
-	        print("Unexpected error in prompt")
+	        printerr("Unexpected error in prompt")
 	    except Exception as err:
-	    	print(f"Unknown exception in prompt: {err}")
+	    	printerr(f"Unknown exception in prompt: {err}")
 
 
 bash_history = f"/home/{get_username()}/.bash_history"
 history = FileHistory(bash_history)
 
 
+def load_history():
+	history = FileHistory(bash_history)
+
+
 def clear_history():
 	with open(bash_history, "w") as h:
 		h.write("")
 
-	history = FileHistory(bash_history)
+	load_history()
 
 
 autocompletion = autocomplete_cwd()
 keyboard_listener = None
 
 
-def open_new_tab():
-	run(
-		[
-			"gnome-terminal",
-			"--tab",
-			f"--working-directory={os.getcwd()}",
-			"--",
-			"python",
-			f"{BASE}/terminal.py"
-		],
-		env=os.environ.copy()
-	)
+def open_new_tab(tabs: int = 1):
+	r = 0
 
-	return True
+	for i in range(tabs):
+		r = run(
+			[
+				"gnome-terminal",
+				"--tab",
+				f"--working-directory={os.getcwd()}",
+				"--",
+				"python",
+				f"{BASE}/terminal.py"
+			],
+			env=os.environ.copy()
+		)
+
+	return r == 0
 
 
 """
@@ -328,7 +343,6 @@ def kill_lock():
 			return True
 
 		# Is the master still alive?
-
 		# This logic is broken
 		try:
 			"""
@@ -347,16 +361,14 @@ def kill_lock():
 
 
 def is_master_tab():
-	kill_lock()
+	# kill_lock()
 
 	try:
 		with open(LOCK_FILE, "x") as f:
 			f.write(str(os.getpid()))
 
-		"""
-		create_commands_thread()
-		commands_thread.run()
-		"""
+		# create_commands_thread()
+		# commands_thread.run()
 		return True
 	except (FileExistsError, OSError):
 		return False
@@ -364,9 +376,9 @@ def is_master_tab():
 
 is_master = is_master_tab()
 
-if is_master:
-	with open(f"{BASE}/icon-sm.txt", "r") as i:
-		print(i.read())
+#if is_master:
+#	with open(f"{BASE}/icon-sm.txt", "r") as i:
+#		print(i.read())
 
 while True:
 	is_master = is_master_tab()
@@ -405,7 +417,6 @@ while True:
 			" 🖝  "# 3
 		)
 	)
-
 
 	# Skip empty entries
 	if is_empty(cmd):
@@ -456,17 +467,28 @@ while True:
 
 		elif cmd == "new" and argsvalid:
 			if args[0] == "tab":
-				open_new_tab()
+				tabs = 1
+
+				if args[1]:
+					tabs = int(args[1])
+
+				open_new_tab(tabs)
 			continue
 
-		elif cmd in ["reload-config", "reload-conf", "reload-env", "reload"]:
-			e = os.environ.copy()
-			print("Done")
+		elif cmd in "reload" and argsvalid:
+			if "conf" in args[0]:
+				e = os.environ.copy()
+				print("Done")
+			elif args[0] == "history":
+				load_history()
+				printinf("Done")
+			else:
+				print(f"Command incomplete {cmd}")
 			continue
 
 		elif cmd == "delete-history":
 			clear_history()
-			print("Done")
+			printinf("Done")
 			continue
 
 		elif cmd == "cd":
@@ -475,9 +497,9 @@ while True:
 				os.chdir(dest)
 				autocompletion = autocomplete_cwd()
 			except FileNotFoundError:
-				print(f"cd: {args[0]}: No such file or directory")
+				printalr(f"cd: {args[0]}: No such file or directory")
 			except Exception as err:
-				print(f"cd: {err}")
+				printerr(f"cd: {err}")
 			continue
 
 		elif cmd in ["su", "sudo"] and argsvalid:
@@ -487,14 +509,17 @@ while True:
 
 		elif cmd == "whoami":
 			if is_super_user:
-				printalr("You are executing commands as root, be careful!")
+				printalr("You are executing commands as super user, be careful!")
+
+		elif is_scrambled(cmd, "clear") or cmd == "cls":
+			cmd = "clear"
 
 		# Executing bash scripts
 		elif cmd.startswith("./"):
 			script = cmd.replace("./", "")
 			"""TODO
 
-			sometimes this asks for password
+			Sometimes this asks for password
 			check why
 			"""
 			cmd = "bash"
@@ -505,17 +530,21 @@ while True:
 		else:
 			run([cmd, *args], env=e)
 	except CalledProcessError as cpe:
-		print(f"Error occurred: {cpe}\nCommand: {cmd}")
+		printerr(f"Error occurred: {cpe}\nCommand: {cmd}")
 		continue
 	except Exception as err:
-		print(f"Error occurred: {err}")
+		printerr(f"Error occurred: {err}")
 
+		"""
 		if os.path.exists(LOCK_FILE) and is_master:
 			os.remove(LOCK_FILE)
+		"""
 
 		continue
 	except KeyboardInterrupt:
 		if is_super_user:
 			deescalate()
+
+		print("")
 
 		continue
