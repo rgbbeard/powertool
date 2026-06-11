@@ -15,7 +15,7 @@ def is_scrambled(target: str, letters: Union[list, str]) -> bool:
     if isinstance(letters, str):
         letters = list(letters)
 
-    return all(l in target for l in letters)
+    return all(l in target for l in letters) and len(target) == len(letters)
 
 
 def get_path(from_filename: str, path_format: str = "unix"):
